@@ -1,0 +1,63 @@
+-------------------------------------------------------------------------------------------------------------------------------
+<?php
+
+// Open the CSV file for reading
+$handle = fopen('largefile.csv', 'r');
+if ($handle === false) {
+    die('Error opening the file.'); // Exit if the file cannot be opened
+}
+
+// Create a new PDO instance to connect to the MySQL database
+$pdo = new PDO('mysql:host=localhost;dbname=your_database', 'username', 'password');
+// Set the PDO error mode to exception to handle errors gracefully
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+// Prepare an SQL statement for inserting data into the database
+$stmt = $pdo->prepare("INSERT INTO your_table (column1, column2, column3) VALUES (?, ?, ?)");
+
+// Define the batch size for inserting records
+$batchSize = 1000;
+$batchData = []; // Initialize an array to hold the batch of data
+
+// Read the CSV file line by line
+while (($data = fgetcsv($handle, 1000, ",")) !== false) {
+    $batchData[] = $data; // Add the row of data to the batch
+
+    // Check if the batch size limit has been reached
+    if (count($batchData) >= $batchSize) {
+        $pdo->beginTransaction(); // Start a new transaction
+        foreach ($batchData as $row) {
+            $stmt->execute($row); // Execute the prepared statement for each row
+        }
+        $pdo->commit(); // Commit the transaction
+        $batchData = []; // Clear the batch data for the next set of records
+    }
+}
+
+// Check if there are any remaining records in the batch after the loop
+if (!empty($batchData)) {
+    $pdo->beginTransaction(); // Start a new transaction for the remaining records
+    foreach ($batchData as $row) {
+        $stmt->execute($row); // Execute the prepared statement for each remaining row
+    }
+    $pdo->commit(); // Commit the transaction
+}
+
+// Close the file handle
+fclose($handle);
+?>
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Explanation:
+File Handling: The script opens the CSV file for reading and checks for errors.
+
+Database Connection: It establishes a connection to the database using PDO.
+
+Batch Processing: It reads the CSV file line by line, accumulating rows in batches of a specified size (e.g., 1000).
+
+Prepared Statements: It uses prepared statements for efficient and secure database inserts.
+
+Transactions: It wraps the inserts in transactions to improve performance and ensure data integrity.
+
+Final Insert: After the loop, it handles any remaining rows that didn't fill a complete batch.

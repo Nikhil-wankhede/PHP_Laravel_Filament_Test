@@ -1,0 +1,92 @@
+In Laravel, you can handle asynchronous tasks like sending emails using queues and background jobs.
+Here's how you can ensure that the email is sent asynchronously:
+
+1. Configure Queue Driver
+First, you need to configure a queue driver in your config/queue.php file. 
+Laravel supports several queue drivers like Redis, Amazon SQS, and database. 
+For example, to use the database queue driver, you can set it like this:
+
+
+'default' => env('QUEUE_CONNECTION', 'database'),
+
+
+2. Create a Job
+Next, create a job class that will be responsible for sending the email. 
+You can generate a job using the Artisan command:
+
+php artisan make:job SendEmailJob
+
+
+This will create a new job class app/Jobs/SendEmailJob.php. In this class, you need to 
+define the logic for sending the email in the handle method:
+
+
+<?php
+
+// Define the namespace for the job class
+namespace App\Jobs;
+
+// Import necessary classes from the Laravel framework
+use Illuminate\Bus\Queueable; // Trait for queueable jobs
+use Illuminate\Contracts\Queue\ShouldQueue; // Interface for jobs that should be queued
+use Illuminate\Mail\Mailable; // Base class for creating email messages
+use Illuminate\Queue\InteractsWithQueue; // Trait for interacting with the queue
+use Illuminate\Queue\SerializesModels; // Trait for serializing job data
+use Mail; // Facade for sending emails
+
+// Define the SendEmailJob class that implements the ShouldQueue interface
+class SendEmailJob implements ShouldQueue
+{
+    // Use traits to add functionality to the job class
+    use InteractsWithQueue, Queueable, SerializesModels;
+
+    // Property to hold the Mailable instance
+    protected $mailable;
+
+    // Constructor to initialize the job with a Mailable instance
+    public function __construct(Mailable $mailable)
+    {
+        $this->mailable = $mailable; // Assign the Mailable instance to the class property
+    }
+
+    // Method to handle the job execution
+    public function handle()
+    {
+        // Use the Mail facade to send the email using the provided Mailable instance
+        Mail::send($this->mailable);
+    }
+}
+?>
+
+
+3 Dispatch the Job
+After creating the job, you need to dispatch it from the controller or event handler 
+where the form is being submitted. You can use the dispatch method provided by Laravel:
+
+
+use App\Jobs\SendEmailJob;
+use App\Mail\YourEmailMailable;
+
+public function handleFormSubmission(Request $request)
+{
+    // Logic for handling the form submission
+
+    $mailable = new YourEmailMailable($data);
+    SendEmailJob::dispatch($mailable);
+
+    // Other logic...
+}
+
+
+Here, YourEmailMailable is the mailable class you have created for the email you want to send.
+
+
+4. Run the Queue Worker
+Finally, you need to start a queue worker to process the jobs from the queue. 
+You can run the worker using the Artisan command:
+
+
+php artisan queue:work
+
+
+This command will start a worker that listens for new jobs and processes them as they arrive in the queue.

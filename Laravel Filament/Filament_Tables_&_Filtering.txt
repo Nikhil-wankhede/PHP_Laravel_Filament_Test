@@ -1,0 +1,67 @@
+Implementing Filament Table with Filtering
+To create a Filament table that displays a list of users and allows filtering by role, you 
+can follow these steps:
+
+Step 1: Create a Filament Resource
+First, create a new Filament resource using the following command:
+
+php artisan make:filament-resource User
+
+This will create a new UserResource class in the app/Filament/Resources directory.
+
+Step 2: Define the Table Columns
+In the UserResource class, define the table columns using the table method:
+
+// app/Filament/Resources/UserResource.php
+
+namespace App\Filament\Resources;
+
+use Filament\Tables;
+use Filament\Resources\Resource;
+use Filament\Resources\Table;
+
+class UserResource extends Resource
+{
+    protected static ?string $model = User::class;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('name'),
+                Tables\Columns\TextColumn::make('email'),
+                Tables\Columns\TextColumn::make('role'),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('role')
+                    ->options([
+                        'admin' => 'Admin',
+                        'editor' => 'Editor',
+                        'user' => 'User',
+                    ]),
+            ]);
+    }
+}
+
+
+In this example, we define three columns: name, email, and role. We also define a 
+filter for the role column using the SelectFilter class.
+
+Step 3: Register the Resource
+Finally, register the UserResource class in the filament.php configuration file:
+
+// config/filament.php
+
+'resources' => [
+    // ...
+    \App\Filament\Resources\UserResource::class,
+],
+
+With these steps, you should now have a Filament table that displays a list of users and allows filtering by role.
+
+Example Use Case
+To use this table, navigate to the Filament admin panel and click on the "Users" 
+resource. You should see a table with the defined columns and a filter dropdown for the role column. 
+Selecting a role from the dropdown will filter the table to show only users with that role.

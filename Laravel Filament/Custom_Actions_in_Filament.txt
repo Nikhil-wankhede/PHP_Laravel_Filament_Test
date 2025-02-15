@@ -1,0 +1,72 @@
+To add a custom "Approve" action in a Filament resource for a Post model that 
+updates the status column to "approved" without refreshing the page, you can follow these steps:
+
+1. Open your PostResource class (e.g., app/Filament/Resources/PostResource.php).
+
+2. In the getActions() method, add a new action like this:
+
+use Filament\Tables\Actions\Action;
+use Illuminate\Database\Eloquent\Model;
+
+public static function getActions(): array
+{
+    return [
+        // Other actions...
+        Action::make('approve')
+            ->label('Approve')
+            ->action(function (Model $record, array $data): void {
+                $record->update(['status' => 'approved']);
+            })
+            ->requiresConfirmation()
+            ->color('success')
+            ->iconButton(),
+    ];
+}
+
+Here's what each part of the code does:
+
+Action::make('approve'): Creates a new action with the key 'approve'.
+->label('Approve'): Sets the label for the action button to "Approve".
+->action(function (Model $record, array $data): void { ... }): Defines the action that will be executed when the button is clicked. In this case, it updates the status column of the $record (the Post model instance) to "approved".
+->requiresConfirmation(): Adds a confirmation dialog before executing the action.
+->color('success'): Sets the color of the action button to green (success).
+->iconButton(): Renders the action as an icon button instead of a regular button.
+
+3. Next, you need to add some JavaScript to handle the action without refreshing the page. 
+In your resources/js/app.js file, add the following code:
+
+import Alpine from 'alpinejs'
+import FormsAlpinePlugin from '../../vendor/filament/forms/dist/module.esm'
+
+Alpine.plugin(FormsAlpinePlugin)
+
+window.Alpine = Alpine
+
+Alpine.start()
+
+
+4. This code sets up Alpine.js and the Filament Forms Alpine plugin, which is required for 
+the action to work without refreshing the page.
+
+Finally, in your Blade view (e.g., resources/views/filament/resources/post-resource.blade.php), add the 
+following code inside the <div x-data="{ isLoading: false }"> section:
+
+
+<div x-data="{ isLoading: false }">
+    <!-- Table or other content -->
+
+    <div
+        x-data="{ action: null }"
+        x-on:action.window="action = $event.detail.action; isLoading = true"
+        x-on:action-completed.window="isLoading = false"
+    >
+        <span x-text="action?.label" x-show="isLoading"></span>
+    </div>
+</div>
+
+
+This code sets up Alpine.js components to handle the action and display a loading indicator while the action is being executed.
+
+With these changes, when you click the "Approve" action button, it will update the 
+status column to "approved" without refreshing the page, and a loading indicator will 
+be displayed while the action is being executed.
